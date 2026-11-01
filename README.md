@@ -8,5 +8,6 @@
 - 双击 `Stop-Live.cmd`：停止本项目直播并退出本项目的 MediaMTX；OBS 保留打开。
 - 在 OBS 的 **LAN Stream** 场景集合中选择采集场景。`链路测试`用于测试画面与声音，`场景`保留原集合的采集配置副本。
 - LAN Stream 的桌面音频、麦克风初始静音；直播时按需在 OBS 混音器解除对应静音。测试视频带低音量测试音。
+- WHIP 的音频编码器须保持 **FFmpeg Opus**；启动器会检查，AAC 等编码不匹配时会提示更正。本机观看页面保持静音，避免播放声被桌面音频再次采集。
 
 首次部署与运行原理见 [部署说明](docs/guides/deployment.md)，本次结果见 [部署验收](docs/guides/verification.md)，Agent 约定见 [AGENTS.md](AGENTS.md)。

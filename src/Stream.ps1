@@ -101,6 +101,7 @@ try {
     $service = Invoke-ObsRequest $socket 'GetStreamServiceSettings'
     if ($streamStatus.outputActive) {
         if ($profiles.currentProfileName -eq $settings.obsProfile -and (Test-ProjectService $service) -and $mediaProcess) {
+            Assert-ObsWhipAudioConfiguration $socket
             Write-Output "Already streaming: $($settings.watchUrl)"
             return
         }
@@ -125,6 +126,7 @@ try {
     }
     $service = Invoke-ObsRequest $socket 'GetStreamServiceSettings'
     if (-not (Test-ProjectService $service)) { throw 'LAN Stream profile does not contain the expected WHIP endpoint.' }
+    Assert-ObsWhipAudioConfiguration $socket
 
     if (-not $mediaProcess) {
         $conflicts = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object {$_.LocalPort -in 8889,9997})

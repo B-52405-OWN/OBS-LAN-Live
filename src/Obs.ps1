@@ -74,6 +74,28 @@ function Invoke-ObsRequest {
     return $reply.d.responseData
 }
 
+function Assert-ObsWhipAudioConfiguration {
+    param($Socket)
+    $mode = Invoke-ObsRequest $Socket 'GetProfileParameter' @{parameterCategory='Output';parameterName='Mode'}
+    $outputMode = $mode.parameterValue
+    if (-not $outputMode) { $outputMode = $mode.defaultParameterValue }
+    if ($outputMode -eq 'Simple') {
+        $category = 'SimpleOutput'
+        $name = 'StreamAudioEncoder'
+        $expected = 'opus'
+    } else {
+        $category = 'AdvOut'
+        $name = 'AudioEncoder'
+        $expected = 'ffmpeg_opus'
+    }
+    $audio = Invoke-ObsRequest $Socket 'GetProfileParameter' @{parameterCategory=$category;parameterName=$name}
+    $encoder = $audio.parameterValue
+    if (-not $encoder) { $encoder = $audio.defaultParameterValue }
+    if ($encoder -ne $expected) {
+        throw "LAN WHIP audio requires Opus; current encoder is '$encoder'. Stop streaming, select FFmpeg Opus in OBS Settings > Output > Streaming > Audio Encoder, apply, then start again."
+    }
+}
+
 function Close-ObsSocket {
     param($Socket)
     if ($null -eq $Socket) { return }
