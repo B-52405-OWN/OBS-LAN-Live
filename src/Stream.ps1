@@ -38,12 +38,12 @@ try {
     if ($Action -eq 'Firewall') {
         $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
         if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Windows administrator rights are required for firewall configuration.' }
-        foreach ($entry in @(@{name='Stream-MediaMTX-Web';protocol='TCP';port=8889}, @{name='Stream-MediaMTX-Media';protocol='UDP';port=8189})) {
+        foreach ($entry in @(@{name='Stream-MediaMTX-Web';protocol='TCP';port=8889}, @{name='Stream-MediaMTX-Media';protocol='TCP';port=8189})) {
             $existing = Get-NetFirewallRule -Name $entry.name -ErrorAction SilentlyContinue
             if ($existing) { Remove-NetFirewallRule -Name $entry.name }
             New-NetFirewallRule -Name $entry.name -DisplayName $entry.name -Direction Inbound -Action Allow -Enabled True -Profile Any -Program $mediaExe -Protocol $entry.protocol -LocalPort $entry.port -LocalAddress $settings.lanAddress -RemoteAddress $settings.lanSubnet -InterfaceType Wired | Out-Null
         }
-        @{time=(Get-Date).ToString('o');success=$true;localAddress=$settings.lanAddress;remoteSubnet=$settings.lanSubnet;ports=@('TCP/8889','UDP/8189')} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $runtimeDir 'firewall-result.json') -Encoding UTF8
+        @{time=(Get-Date).ToString('o');success=$true;localAddress=$settings.lanAddress;remoteSubnet=$settings.lanSubnet;ports=@('TCP/8889','TCP/8189')} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $runtimeDir 'firewall-result.json') -Encoding UTF8
         Write-Output 'LAN-only firewall rules installed.'
         return
     }
@@ -129,9 +129,9 @@ try {
     Assert-ObsWhipAudioConfiguration $socket
 
     if (-not $mediaProcess) {
-        $conflicts = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object {$_.LocalPort -in 8889,9997})
-        $udpConflict = @(Get-NetUDPEndpoint -LocalPort 8189 -ErrorAction SilentlyContinue)
-        if ($conflicts.Count -or $udpConflict.Count) { throw 'A required port (8889, 9997, or UDP 8189) is already in use.' }
+        $conflicts = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object {$_.LocalPort -in 8189,8889,9997})
+        $udpConflict = @(Get-NetUDPEndpoint -LocalPort 8189 -ErrorAction SilentlyContinue | Where-Object {$_.LocalAddress -in '127.0.0.1','0.0.0.0','::'})
+        if ($conflicts.Count -or $udpConflict.Count) { throw 'A required TCP port (8189, 8889, 9997) or loopback UDP port 8189 is already in use.' }
         $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
         $startedMedia = Start-Process -FilePath $mediaExe -ArgumentList ('"' + $mediaConfig + '"') -WorkingDirectory $runtimeDir -WindowStyle Hidden -RedirectStandardOutput (Join-Path $runtimeDir "mediamtx-$stamp.jsonl") -RedirectStandardError (Join-Path $runtimeDir "mediamtx-$stamp.stderr.log") -PassThru
         @{processId=$startedMedia.Id;startedUtc=$startedMedia.StartTime.ToUniversalTime().ToString('o')} | ConvertTo-Json | Set-Content -LiteralPath $pidPath -Encoding UTF8

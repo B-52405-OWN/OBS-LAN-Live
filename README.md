@@ -5,6 +5,7 @@
 - 首次使用：右键 `Configure-Firewall.cmd`，选择“以管理员身份运行”，仅放行局域网观看端口。
 - 双击 `Start-Live.cmd`：启动 MediaMTX，切换 OBS 到独立的 **LAN Stream** 配置和场景集合，开始直播。
 - 同一局域网设备打开 **http://192.168.1.6:8889/live**。
+- 观看仅需 TCP 8889（页面）和 TCP 8189（音视频），不需要 UDP 隧道。更新后重新以管理员运行 Configure-Firewall.cmd。OBS 本机回环推流保留 UDP。
 - 双击 `Stop-Live.cmd`：停止本项目直播并退出本项目的 MediaMTX；OBS 保留打开。
 - 在 OBS 的 **LAN Stream** 场景集合中选择采集场景。`链路测试`用于测试画面与声音，`场景`保留原集合的采集配置副本。
 - LAN Stream 的桌面音频、麦克风初始静音；直播时按需在 OBS 混音器解除对应静音。测试视频带低音量测试音。
