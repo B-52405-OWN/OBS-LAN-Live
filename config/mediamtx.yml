@@ -11,7 +11,7 @@ authInternalUsers:
         path: live
       - action: api
   - user: any
-    ips: [127.0.0.1, '::1', 192.168.1.0/24]
+    ips: [127.0.0.1, '::1', 192.168.1.0/24, 172.16.3.0/24]
     permissions:
       - action: read
         path: live
@@ -29,10 +29,10 @@ moq: false
 
 webrtc: true
 webrtcAddress: :8889
-webrtcAllowOrigins: ['http://192.168.1.6:8889', 'http://127.0.0.1:8889', 'http://localhost:8889']
+webrtcAllowOrigins: ['http://192.168.1.6:8889', 'http://127.0.0.1:8889', 'http://localhost:8889', 'http://172.16.3.2:8889']
 webrtcLocalUDPAddress: :8189
 webrtcIPsFromInterfaces: false
-webrtcAdditionalHosts: [192.168.1.6, 127.0.0.1]
+webrtcAdditionalHosts: [192.168.1.6, 127.0.0.1, 172.16.3.2]
 webrtcICEServers2: []
 
 paths:

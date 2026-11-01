@@ -38,10 +38,17 @@ try {
     if ($Action -eq 'Firewall') {
         $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
         if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Windows administrator rights are required for firewall configuration.' }
-        foreach ($entry in @(@{name='Stream-MediaMTX-Web';protocol='TCP';port=8889}, @{name='Stream-MediaMTX-Media';protocol='UDP';port=8189})) {
-            $existing = Get-NetFirewallRule -Name $entry.name -ErrorAction SilentlyContinue
-            if ($existing) { Remove-NetFirewallRule -Name $entry.name }
-            New-NetFirewallRule -Name $entry.name -DisplayName $entry.name -Direction Inbound -Action Allow -Enabled True -Profile Any -Program $mediaExe -Protocol $entry.protocol -LocalPort $entry.port -LocalAddress $settings.lanAddress -RemoteAddress $settings.lanSubnet -InterfaceType Wired | Out-Null
+        $scopes = @(@{suffix='';address=$settings.lanAddress;subnet=$settings.lanSubnet;interfaceType='Wired'})
+        if ($settings.virtualAddress -and $settings.virtualSubnet) {
+            $scopes += @{suffix='-Virtual';address=$settings.virtualAddress;subnet=$settings.virtualSubnet;interfaceType='Any'}
+        }
+        foreach ($scope in $scopes) {
+            foreach ($entry in @(@{name='Stream-MediaMTX-Web';protocol='TCP';port=8889}, @{name='Stream-MediaMTX-Media';protocol='UDP';port=8189})) {
+                $ruleName = $entry.name + $scope.suffix
+                $existing = Get-NetFirewallRule -Name $ruleName -ErrorAction SilentlyContinue
+                if ($existing) { Remove-NetFirewallRule -Name $ruleName }
+                New-NetFirewallRule -Name $ruleName -DisplayName $ruleName -Direction Inbound -Action Allow -Enabled True -Profile Any -Program $mediaExe -Protocol $entry.protocol -LocalPort $entry.port -LocalAddress $scope.address -RemoteAddress $scope.subnet -InterfaceType $scope.interfaceType | Out-Null
+            }
         }
         @{time=(Get-Date).ToString('o');success=$true;localAddress=$settings.lanAddress;remoteSubnet=$settings.lanSubnet;ports=@('TCP/8889','UDP/8189')} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $runtimeDir 'firewall-result.json') -Encoding UTF8
         Write-Output 'LAN-only firewall rules installed.'
