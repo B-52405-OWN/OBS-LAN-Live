@@ -40,7 +40,8 @@ try {
         if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Windows administrator rights are required for firewall configuration.' }
         $scopes = @(@{suffix='';address=$settings.lanAddress;subnet=$settings.lanSubnet;interfaceType='Wired'})
         if ($settings.virtualAddress -and $settings.virtualSubnet) {
-            $scopes += @{suffix='-Virtual';address=$settings.virtualAddress;subnet=$settings.virtualSubnet;interfaceType='Any'}
+            $remoteAddresses = @($settings.virtualSubnet) + @($settings.virtualAdditionalClients | Where-Object {$_})
+            $scopes += @{suffix='-Virtual';address=$settings.virtualAddress;subnet=$remoteAddresses;interfaceType='Any'}
         }
         foreach ($scope in $scopes) {
             foreach ($entry in @(@{name='Stream-MediaMTX-Web';protocol='TCP';port=8889}, @{name='Stream-MediaMTX-Media';protocol='UDP';port=8189})) {
