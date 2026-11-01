@@ -1,0 +1,9 @@
+dev/artifacts/
+dev/cache/
+dev/build/
+vendor/mediamtx/mediamtx.exe
+vendor/mediamtx/mediamtx.yml
+.playwright-cli/
+*.log
+__pycache__/
+*.pyc
