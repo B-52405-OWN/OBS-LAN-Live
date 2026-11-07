@@ -4,7 +4,7 @@
 
 - 首次使用：右键 `Configure-Firewall.cmd`，选择“以管理员身份运行”，仅放行局域网观看端口。
 - 双击 `Start-Live.cmd`：启动 MediaMTX，切换 OBS 到独立的 **LAN Stream** 配置和场景集合，开始直播。
-- 物理局域网观看：**http://192.168.1.6:8889/live**；虚拟局域网观看：**http://172.16.3.2:8889/live**。
+- 物理局域网观看地址为 **http://192.168.1.6:8889/live**。蒲公英观看地址见[部署说明](docs/guides/deployment.md)。
 - 虚拟局域网的免登录范围和防火墙配置见[部署说明](docs/guides/deployment.md)。
 - 观看使用 TCP 8889（页面）和 UDP 8189（音视频）。如之前更新过 TCP 媒体防火墙规则，请重新以管理员运行 Configure-Firewall.cmd。
 - 双击 `Stop-Live.cmd`：停止本项目直播并退出本项目的 MediaMTX；OBS 保留打开。
