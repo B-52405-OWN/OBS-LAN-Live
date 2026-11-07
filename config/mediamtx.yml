@@ -11,7 +11,7 @@ authInternalUsers:
         path: live
       - action: api
   - user: any
-    ips: [127.0.0.1, '::1', 192.168.1.0/24, 172.16.3.0/24, 172.16.1.54/32]
+    ips: [127.0.0.1, '::1', 192.168.1.0/24, 172.16.0.0/16]
     permissions:
       - action: read
         path: live
