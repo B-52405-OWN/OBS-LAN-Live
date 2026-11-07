@@ -32,26 +32,37 @@ function Test-ProjectService {
     return ($Service.streamServiceType -eq 'whip_custom' -and $Service.streamServiceSettings.server -eq $settings.whipUrl)
 }
 
+function Get-LanWatchUrls {
+    $privateIPv4 = '^(10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|169\.254\.)'
+    Get-NetIPAddress -AddressFamily IPv4 -AddressState Preferred -ErrorAction SilentlyContinue |
+        Where-Object { -not $_.SkipAsSource -and $_.IPAddress -match $privateIPv4 } |
+        Sort-Object InterfaceIndex,IPAddress |
+        ForEach-Object { "http://$($_.IPAddress):8889/live/" } |
+        Select-Object -Unique
+}
+
 try {
     $locked = $mutex.WaitOne(0)
     if (-not $locked) { throw 'Another Stream command is running. Retry after it finishes.' }
     if ($Action -eq 'Firewall') {
         $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
         if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Windows administrator rights are required for firewall configuration.' }
-        $scopes = @(@{suffix='';address=$settings.lanAddress;subnet=$settings.lanSubnet;interfaceType='Wired'})
-        if ($settings.virtualAddress -and $settings.virtualSubnet) {
-            $remoteAddresses = @($settings.virtualSubnet) + @($settings.virtualAdditionalClients | Where-Object {$_})
-            $scopes += @{suffix='-Virtual';address=$settings.virtualAddress;subnet=$remoteAddresses;interfaceType='Any'}
-        }
-        foreach ($scope in $scopes) {
-            foreach ($entry in @(@{name='Stream-MediaMTX-Web';protocol='TCP';port=8889}, @{name='Stream-MediaMTX-Media';protocol='UDP';port=8189})) {
-                $ruleName = $entry.name + $scope.suffix
-                $existing = Get-NetFirewallRule -Name $ruleName -ErrorAction SilentlyContinue
-                if ($existing) { Remove-NetFirewallRule -Name $ruleName }
-                New-NetFirewallRule -Name $ruleName -DisplayName $ruleName -Direction Inbound -Action Allow -Enabled True -Profile Any -Program $mediaExe -Protocol $entry.protocol -LocalPort $entry.port -LocalAddress $scope.address -RemoteAddress $scope.subnet -InterfaceType $scope.interfaceType | Out-Null
+        $lanNetworks = @('10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '169.254.0.0/16')
+        foreach ($entry in @(@{name='Stream-MediaMTX-Web';protocol='TCP';port=8889}, @{name='Stream-MediaMTX-Media';protocol='UDP';port=8189})) {
+            $rule = @{
+                Name=$entry.name; Direction='Inbound'; Action='Allow'; Enabled='True'; Profile='Any'
+                Program=$mediaExe; Protocol=$entry.protocol; LocalPort=$entry.port
+                LocalAddress=$lanNetworks; RemoteAddress=$lanNetworks; InterfaceType='Any'
+            }
+            if (Get-NetFirewallRule -Name $entry.name -ErrorAction SilentlyContinue) {
+                Set-NetFirewallRule @rule | Out-Null
+            } else {
+                New-NetFirewallRule @rule -DisplayName $entry.name | Out-Null
             }
         }
-        @{time=(Get-Date).ToString('o');success=$true;localAddress=$settings.lanAddress;remoteSubnet=$settings.lanSubnet;ports=@('TCP/8889','UDP/8189')} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $runtimeDir 'firewall-result.json') -Encoding UTF8
+        $legacyRules = @(Get-NetFirewallRule -Name 'Stream-MediaMTX-Web-Virtual','Stream-MediaMTX-Media-Virtual' -ErrorAction SilentlyContinue)
+        if ($legacyRules.Count) { $legacyRules | Remove-NetFirewallRule }
+        @{time=(Get-Date).ToString('o');success=$true;localAddress=$lanNetworks;remoteSubnet=$lanNetworks;ports=@('TCP/8889','UDP/8189')} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $runtimeDir 'firewall-result.json') -Encoding UTF8
         Write-Output 'LAN-only firewall rules installed.'
         return
     }
@@ -63,7 +74,9 @@ try {
             $socket = Open-ObsSocket
             $obsState = Invoke-ObsRequest $socket 'GetStreamStatus'
         }
-        @{mediaProcessId= $(if ($mediaProcess) {$mediaProcess.Id} else {$null});obs=$obsState;watchUrl=$settings.watchUrl} | ConvertTo-Json -Depth 5
+        $watchUrls = @(Get-LanWatchUrls)
+        $watchUrl = if ($watchUrls.Count) { $watchUrls[0] } else { 'http://127.0.0.1:8889/live/' }
+        @{mediaProcessId= $(if ($mediaProcess) {$mediaProcess.Id} else {$null});obs=$obsState;watchUrl=$watchUrl;watchUrls=$watchUrls} | ConvertTo-Json -Depth 5
         return
     }
 
@@ -93,8 +106,6 @@ try {
     }
 
     if (-not (Test-Path -LiteralPath $mediaExe)) { throw 'MediaMTX executable is missing; see vendor/mediamtx/SOURCE.md.' }
-    $lanIP = Get-NetIPAddress -AddressFamily IPv4 -IPAddress $settings.lanAddress -ErrorAction SilentlyContinue
-    if (-not $lanIP) { throw "LAN address $($settings.lanAddress) is not present; update config before starting." }
     if (-not (Get-Process obs64 -ErrorAction SilentlyContinue)) {
         Start-Process -FilePath $settings.obsExecutable -WorkingDirectory (Split-Path -Parent $settings.obsExecutable) -ArgumentList '--profile "LAN Stream" --collection "LAN Stream"' | Out-Null
         $deadline = (Get-Date).AddSeconds(25)
@@ -110,7 +121,8 @@ try {
     if ($streamStatus.outputActive) {
         if ($profiles.currentProfileName -eq $settings.obsProfile -and (Test-ProjectService $service) -and $mediaProcess) {
             Assert-ObsWhipAudioConfiguration $socket
-            Write-Output "Already streaming: $($settings.watchUrl)"
+            Write-Output 'Already streaming.'
+            Get-LanWatchUrls
             return
         }
         throw 'OBS is already streaming. Stop its current stream before switching.'
@@ -159,7 +171,8 @@ try {
         $live = $paths.items | Where-Object {$_.name -eq 'live' -and $_.ready}
     } until (($status.outputActive -and $live) -or (Get-Date) -ge $deadline)
     if (-not $status.outputActive -or -not $live) { throw 'OBS did not publish the live stream within 20 seconds.' }
-    Write-Output "Streaming: $($settings.watchUrl)"
+    Write-Output 'Streaming.'
+    Get-LanWatchUrls
 } catch {
     $failure = $_
     if ($Action -eq 'Start') {

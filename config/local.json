@@ -2,10 +2,5 @@
   "obsExecutable": "C:\\Programs\\obs-studio\\bin\\64bit\\obs64.exe",
   "obsProfile": "LAN Stream",
   "obsCollection": "LAN Stream",
-  "lanAddress": "192.168.1.6",
-  "lanSubnet": "192.168.1.0/24",
-  "watchUrl": "http://192.168.1.6:8889/live",
-  "whipUrl": "http://127.0.0.1:8889/live/whip",
-  "virtualAddress": "172.16.3.44",
-  "virtualSubnet": "172.16.0.0/16"
+  "whipUrl": "http://127.0.0.1:8889/live/whip"
 }

@@ -6,13 +6,13 @@ OBS 33.0.1 → WHIP（H.264 + Opus）→ MediaMTX 1.21.3 → WebRTC 浏览器观
 
 使用现有 OBS 安装 `C:/Programs/obs-studio/bin/64bit/obs64.exe`。MediaMTX 使用官方 Windows AMD64 独立程序，不依赖 Docker。直播配置与场景集合均命名为 `LAN Stream`，原 `未命名` 配置、场景不覆盖。安装默认采用 1920×1080、30fps、NVENC H.264、6000 kbps 和 Opus 128 kbps 音频。高级输出使用低延迟调优、1 秒关键帧，禁用 B 帧、前瞻和多遍编码。用户后续修改的视频参数由 OBS 保存，启动器不重置。
 
-观看地址：`http://192.168.1.6:8889/live`。推流地址：`http://127.0.0.1:8889/live/whip`。OBS 中服务选 WHIP，令牌为空。
+观看地址采用 `http://主播当前局域网IP:8889/live/`。OBS 的 WHIP 推流地址为 `http://127.0.0.1:8889/live/whip`，令牌为空。
 
-当前物理以太网为 192.168.1.6/24；不改变网卡现有的公用网络分类。防火墙仅放行此网卡地址、本地子网的 TCP 8889 与 UDP 8189。服务器的观看权限仅允许回环、192.168.1.0/24 和虚拟网段 172.16.0.0/16；发布权限只允许回环。STUN/TURN 不配置，局域网链路不依赖公网服务。
+免登录观看范围包括回环和私有 IPv4 网段 `10.0.0.0/8`、`172.16.0.0/12`、`192.168.0.0/16` 以及链路本地网段 `169.254.0.0/16`。发布和管理仅允许回环。主播与观看端之间需要可达的局域网或组网路由。
 
-观看页面和信令使用 TCP 8889，WebRTC 音视频使用 UDP 8189；媒体 TCP 监听关闭。2026-11-01 按用户要求从 TCP 观看模式恢复至 UDP，OBS 当前视频参数与 Opus 音频设置保留。
+观看页面和信令使用 TCP 8889，WebRTC 音视频使用 UDP 8189。Windows 防火墙规则按上述 IPv4 范围放行，不绑定固定网卡或单个 IP。
 
-蒲公英观看地址为 http://172.16.3.44:8889/live。主播与观看设备都需连接组网。在主播电脑以管理员身份运行 Configure-Firewall.cmd，为虚拟网卡放行来源为 172.16.0.0/16 的 TCP 8889 和 UDP 8189。蒲公英重新分配主播地址时，按下方地址变更步骤同步配置。
+主播和观看端更换私有网段或 IP 后，播放器会使用当前可达地址。主播 IP 变动时，观看端用新地址打开直播页。可以运行 `powershell.exe -NoProfile -File src/Stream.ps1 -Action Status` 查看 `watchUrls` 中列出的地址，并选用观看设备可达的那一个。
 
 FRP 端口映射需要 TCP 页面隧道和 UDP 媒体隧道，并同步可达地址、ICE 媒体端口和页面来源。
 
@@ -43,7 +43,7 @@ MediaMTX 在使用期间运行，未注册 Windows 服务、计划任务、自�
 
 第三方来源与校验见 [MediaMTX 来源](../../vendor/mediamtx/SOURCE.md)。程序二进制被 Git 忽略；恢复安装时从所记官方发行版下载，核对 SHA256 后将 mediamtx.exe 解压至 vendor/mediamtx。
 
-首次配置防火墙需要 Windows 管理员权限：右键根目录 `Configure-Firewall.cmd`，选择“以管理员身份运行”。等价命令为 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File src/Stream.ps1 -Action Firewall`。若地址变化，同步 config/mediamtx.yml、观看地址和防火墙范围，再重启服务。
+首次部署或从固定 IP 规则升级时，右键根目录 `Configure-Firewall.cmd`，选择“以管理员身份运行”。规则安装成功后，在支持的网段内换网或换 IP 无需再修改防火墙和直播配置。
 
 本次安装状态和验证限制见 [部署验收](verification.md)。运行防火墙配置入口后，以 `dev/artifacts/runtime/firewall-result.json` 与实际规则为准。
 
