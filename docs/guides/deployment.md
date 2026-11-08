@@ -41,9 +41,11 @@ MediaMTX 在使用期间运行，未注册 Windows 服务、计划任务、自�
 
 ## 安装与维护
 
-第三方来源与校验见 [MediaMTX 来源](../../vendor/mediamtx/SOURCE.md)。程序二进制被 Git 忽略；恢复安装时从所记官方发行版下载，核对 SHA256 后将 mediamtx.exe 解压至 vendor/mediamtx。
+主播电脑需安装 Windows x64 桌面版 OBS Studio 33 或更高版本。首次部署时关闭 OBS，双击 `Setup-Live.cmd`，然后确认 Windows 管理员提示以应用局域网防火墙规则。配置入口会按需下载并校验 MediaMTX，创建缺失的 LAN Stream 配置与场景，准备本机 OBS 控制。已有配置可直接复用。
 
-首次部署或从固定 IP 规则升级时，右键根目录 `Configure-Firewall.cmd`，选择“以管理员身份运行”。规则安装成功后，在支持的网段内换网或换 IP 无需再修改防火墙和直播配置。
+新建场景初始为空。在 OBS 选用 LAN Stream 场景集合，添加想直播的采集源，再运行 `Start-Live.cmd`。配置完成与开播是两个独立操作。若 OBS 装在非标准位置且配置入口未找到它，可在 `config/local.json` 设置 `obsExecutable`。
+
+仅需更新防火墙时，也可以右键 `Configure-Firewall.cmd`，选择“以管理员身份运行”。规则安装成功后，在支持的网段内换网或换 IP 无需再修改防火墙和直播配置。MediaMTX 下载来源见 [MediaMTX 说明](../../vendor/mediamtx/SOURCE.md)。
 
 本次安装状态和验证限制见 [部署验收](verification.md)。运行防火墙配置入口后，以 `dev/artifacts/runtime/firewall-result.json` 与实际规则为准。
 

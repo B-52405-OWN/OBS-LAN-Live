@@ -2,7 +2,7 @@
 
 本机 OBS 的局域网直播部署，版本见 [VERSION](VERSION)。
 
-- 首次使用：右键 `Configure-Firewall.cmd`，选择“以管理员身份运行”，仅放行局域网观看端口。
+- 首次部署时，在装好 OBS Studio 的 Windows 电脑上双击 `Setup-Live.cmd`，并确认防火墙步骤的管理员提示。
 - 双击 `Start-Live.cmd`：启动 MediaMTX，切换 OBS 到独立的 **LAN Stream** 配置和场景集合，开始直播。
 - 观看端用浏览器打开 `http://主播当前局域网IP:8889/live/`。物理网和蒲公英都使用对应网卡当前的地址。
 - 免登录范围、查看地址的方法和防火墙配置见[部署说明](docs/guides/deployment.md)。

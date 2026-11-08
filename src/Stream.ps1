@@ -107,7 +107,8 @@ try {
 
     if (-not (Test-Path -LiteralPath $mediaExe)) { throw 'MediaMTX executable is missing; see vendor/mediamtx/SOURCE.md.' }
     if (-not (Get-Process obs64 -ErrorAction SilentlyContinue)) {
-        Start-Process -FilePath $settings.obsExecutable -WorkingDirectory (Split-Path -Parent $settings.obsExecutable) -ArgumentList '--profile "LAN Stream" --collection "LAN Stream"' | Out-Null
+        $obsExe = Find-ObsExecutable $settings.obsExecutable
+        Start-Process -FilePath $obsExe -WorkingDirectory (Split-Path -Parent $obsExe) -ArgumentList '--profile "LAN Stream" --collection "LAN Stream"' | Out-Null
         $deadline = (Get-Date).AddSeconds(25)
         do {
             try { $socket = Open-ObsSocket } catch { if ((Get-Date) -ge $deadline) { throw }; Start-Sleep -Milliseconds 500 }

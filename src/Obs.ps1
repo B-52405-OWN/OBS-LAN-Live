@@ -1,3 +1,16 @@
+function Find-ObsExecutable {
+    param([string]$ConfiguredPath)
+    $installDir = (Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\OBS Studio' -ErrorAction SilentlyContinue).'(default)'
+    $candidates = @($ConfiguredPath, (Join-Path $env:ProgramFiles 'obs-studio\bin\64bit\obs64.exe'))
+    if ($installDir) { $candidates += Join-Path $installDir 'bin\64bit\obs64.exe' }
+    foreach ($candidate in $candidates) {
+        if ($candidate -and (Test-Path -LiteralPath $candidate -PathType Leaf)) {
+            return (Get-Item -LiteralPath $candidate).FullName
+        }
+    }
+    throw 'Install the Windows x64 desktop edition of OBS Studio, or set obsExecutable in config/local.json.'
+}
+
 function Read-ObsMessage {
     param($Socket)
     $buffer = New-Object byte[] 65536

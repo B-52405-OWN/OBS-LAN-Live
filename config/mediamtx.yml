@@ -32,6 +32,15 @@ webrtcAddress: :8889
 webrtcAllowOrigins: []
 webrtcLocalUDPAddress: :8189
 webrtcIPsFromInterfaces: true
+# 虚拟、代理网卡不作为观看端候选地址，避免远程观众连到不可达或限速的隧道。
+webrtcIPsFromInterfacesExcludeList:
+  - VMware Network Adapter VMnet1
+  - VMware Network Adapter VMnet8
+  - vEthernet (Default Switch)
+  - FlClash
+  - 蓝牙网络连接
+  - '本地连接* 9'
+  - '本地连接* 10'
 webrtcAdditionalHosts: [127.0.0.1]
 webrtcICEServers2: []
 
